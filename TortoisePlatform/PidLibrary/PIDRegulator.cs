@@ -158,7 +158,7 @@ namespace TortoisePlatform
 			return value;
 		}
 
-		private void Compute()
+		public void Compute()
 		{
 			if (ReadPv == null || ReadSp == null || WriteOv == null)
 				return;
@@ -215,6 +215,7 @@ namespace TortoisePlatform
 			{
 				try
 				{
+					Console.WriteLine(1);
 					Thread.Sleep(SleepTime);
 					Compute();
 				}
