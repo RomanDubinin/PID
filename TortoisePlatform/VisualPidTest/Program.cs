@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Timers;
+using PidLibrary;
 using Timer = System.Timers.Timer;
 
 namespace TortoisePlatform
@@ -22,7 +23,8 @@ namespace TortoisePlatform
 		private static TrackBar OutVal;
 
 		private static PIDRegulator Regulator;
-		private static TimeSpan SleepTime = TimeSpan.FromMilliseconds(100);
+		private static TimeSpan SleepTime = TimeSpan.FromMilliseconds(10);
+		private static Timer Timer;
 
 		public static double GetActual()
 		{
@@ -59,7 +61,7 @@ namespace TortoisePlatform
 			ExpectedVal.Width = WindowSize;
 			ExpectedVal.Location = new Point(0, 120);
 			
-			Regulator = new PIDRegulator(1.0, 1.0, 1, MaxInput, MinInput, MaxOutput, MinOutput, GetActual, GetExpected, SetVal);
+			Regulator = new PIDRegulator(1.0, 1.0, 1, MaxInput, MinInput, MaxOutput, MinOutput);
 			
 
 			var form = new Form
@@ -74,14 +76,14 @@ namespace TortoisePlatform
 
 		public static void Run()
 		{
-			var timer = new Timer(SleepTime.TotalMilliseconds);
-			timer.Elapsed += Compute;
-			timer.Start();
+			Timer = new Timer(SleepTime.TotalMilliseconds);
+			Timer.Elapsed += Compute;
+			Timer.Start();
 		}
 
 		public static void Compute(object state, ElapsedEventArgs elapsedEventArgs)
 		{
-			Regulator.Compute();
+			SetVal(Regulator.Compute(GetActual(), GetExpected(), TimeSpan.FromMilliseconds(Timer.Interval)));
 		}
 	}
 }
