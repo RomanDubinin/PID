@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Threading;
-using System.Timers;
-using Timer = System.Timers.Timer;
 
 namespace TortoisePlatform
 {
@@ -160,7 +157,7 @@ namespace TortoisePlatform
 			return value;
 		}
 
-		public void Compute(object sender, ElapsedEventArgs elapsedEventArgs)
+		public void Compute()
 		{
 			if (ReadPv == null || ReadSp == null || WriteOv == null)
 				return;
@@ -205,17 +202,6 @@ namespace TortoisePlatform
 
 			//Write it out to the world
 			WriteOv(outReal);
-		}
-
-		#endregion
-
-		#region Threading
-
-		public void Run()
-		{
-			var timer = new Timer(SleepTime.TotalMilliseconds);
-			timer.Elapsed += Compute;
-			timer.Start();
 		}
 
 		#endregion
