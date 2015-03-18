@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace TortoisePlatform
@@ -65,19 +66,9 @@ namespace TortoisePlatform
 			};
 			form.Controls.AddRange(new Control[]{InVal, OutVal, ExpectedVal});
 
-			//new Thread(regulator.Run);
-			form.MouseClick += Update;
+			Action act = Regulator.Run;
+			Task.Run(act);
 			form.ShowDialog();
-		}
-
-		private static void Update(object sender, MouseEventArgs mouseEventArgs)
-		{
-			Regulator.Compute();
-			Console.Clear();
-			Console.WriteLine(InVal.Value);
-			Console.WriteLine(OutVal.Value);
-			Console.WriteLine(ExpectedVal.Value);
-			
 		}
 	}
 }

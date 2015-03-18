@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace TortoisePlatform
 {
@@ -158,7 +160,7 @@ namespace TortoisePlatform
 			return value;
 		}
 
-		public void Compute()
+		public void Compute(object sender, ElapsedEventArgs elapsedEventArgs)
 		{
 			if (ReadPv == null || ReadSp == null || WriteOv == null)
 				return;
@@ -211,18 +213,9 @@ namespace TortoisePlatform
 
 		public void Run()
 		{
-			while (true)
-			{
-				try
-				{
-					Console.WriteLine(1);
-					Thread.Sleep(SleepTime);
-					Compute();
-				}
-				catch (Exception e)
-				{
-				}
-			}
+			var timer = new Timer(SleepTime.TotalMilliseconds);
+			timer.Elapsed += Compute;
+			timer.Start();
 		}
 
 		#endregion
