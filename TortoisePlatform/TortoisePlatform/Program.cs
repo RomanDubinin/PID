@@ -11,7 +11,8 @@ namespace TortoisePlatform
 		private static SerialPort Com;
 		private static Timer SendTimer;
 		private static Timer ReadTimer;
-        private static int ExpectedTics = 200;
+        private static int ExpectedTics = 0;
+        private static int TicsPerPeriod = 50;
 
         private static int MaxInput = 1000;
         private static int MinInput = -1000;
@@ -19,7 +20,7 @@ namespace TortoisePlatform
         private static int MaxOutput = 255;
         private static int MinOutput = -255;
 
-        private static TimeSpan Period = TimeSpan.FromMilliseconds(100);
+        private static TimeSpan Period = TimeSpan.FromMilliseconds(50);
 
         private static int[] Tics;
         private static PIDRegulator[] Regulators;
@@ -43,7 +44,7 @@ namespace TortoisePlatform
             Regulators = new PIDRegulator[4];
             for (var i = 0; i < 4; i++)
             {
-                Regulators[i] = new PIDRegulator(2, 1, 0.3, MaxInput, MinInput, MaxOutput, MinOutput);
+                Regulators[i] = new PIDRegulator(1, 1, 0.3, MaxInput, MinInput, MaxOutput, MinOutput);
             }
 
             Com = new SerialPort("COM29", 115200);
@@ -61,39 +62,40 @@ namespace TortoisePlatform
             {
                 WriteCommand(i, Period.Milliseconds, 10);
             }
-                while (true)
+            while (true)
+            {
+                var command = ReadCommand().Split(' ');
+                if (command[0].CompareTo("FAIL") == 0)
+                    continue;
+
+                if (command.Length != 5)
+                    continue;
+                
+                var id = int.Parse(command[1]);
+                var currentTics = int.Parse(command[3]);
+                //todo это надо менять
+                if (id % 2 == 0)
+                    currentTics *= -1;
+
+                Tics[id] += currentTics;
+                if (command[0].CompareTo("DR") == 0)
                 {
-                    var command = ReadCommand().Split(' ');
-                    if (command[0].CompareTo("FAIL") == 0)
-                        continue;
-
-                    if (command.Length != 5)
-                        continue;
-                    
-                    var id = int.Parse(command[1]);
-                    var currentTics = int.Parse(command[3]);
-                    //todo это надо менять
-                    if (id % 2 == 0)
-                        currentTics *= -1;
-
-                    Tics[id] += currentTics;
-                    if (command[0].CompareTo("DR") == 0)
-                    {
-                        Console.WriteLine("id: {0}, Time: {1}, tics: {2}", id, command[2], Tics[id]);
-                        var t = Tics[id];
-                        Task.Factory.StartNew(() => DoMath(id, t));
-                        Tics[id] = 0;
-                    }
+                    //Console.WriteLine("id: {0}, Time: {1}, tics: {2}", id, command[2], Tics[id]);
+                    var t = Tics[id];
+                    Task.Factory.StartNew(() => DoMath(id, t));
+                    //Tics[id] = 0;
+                    ExpectedTics += TicsPerPeriod / 4;
                 }
+            }
 			Console.ReadLine();
 			Com.Close();
 		}
 
         private static void DoMath(int id, int actualTics)
         {
-            var speed = Regulators[id].Compute(actualTics, ExpectedTics, Period);
+            var speed = Regulators[id].Compute(0, ExpectedTics - actualTics, Period);
 
-            Console.WriteLine("{0}: {1}", id, speed);
+            Console.WriteLine("{0}: {1}", id, ExpectedTics - actualTics);
 
             //todo это надо менять
             if (id % 2 == 0)
