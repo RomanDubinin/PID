@@ -9,10 +9,6 @@ namespace TortoisePlatform
 	public class Program
 	{
 		private static SerialPort Com;
-		private static Timer SendTimer;
-		private static Timer ReadTimer;
-        private static int ExpectedTics = 0;
-        private static int TicsPerPeriod = 50;
 
         private static int MaxInput = 1000;
         private static int MinInput = -1000;
@@ -20,10 +16,9 @@ namespace TortoisePlatform
         private static int MaxOutput = 255;
         private static int MinOutput = -255;
 
-        private static TimeSpan Period = TimeSpan.FromMilliseconds(50);
+        private static SmartWheell[] Wheels;
 
-        private static int[] Tics;
-        private static PIDRegulator[] Regulators;
+        private static TimeSpan Period = TimeSpan.FromMilliseconds(50);
 
         private static void WriteCommand(int driveId, int mills, int speed)
         {
@@ -40,28 +35,26 @@ namespace TortoisePlatform
 
 		public static void Main(string[] args)
 		{
-            Tics = new int[4];
-            Regulators = new PIDRegulator[4];
+            Wheels = new SmartWheell[4];
+
             for (var i = 0; i < 4; i++)
             {
-                Regulators[i] = new PIDRegulator(1, 1, 0.3, MaxInput, MinInput, MaxOutput, MinOutput);
+                var regulator = new PIDRegulator(1, 0.1, 0.01, MaxInput, MinInput, MaxOutput, MinOutput);
+                Wheels[i] = new SmartWheell(regulator, 50);
             }
+            //Wheels[3].TicsPerPeriod = 100;
+            //Wheels[2].TicsPerPeriod = 100;
+
 
             Com = new SerialPort("COM29", 115200);
 			Com.Open();
             Com.WriteLine("SE 100");
 
-            //SendTimer = new Timer(2000);
-            //SendTimer.Elapsed += Send;
-            //SendTimer.Start();
-
-            //ReadTimer = new Timer(5);
-            //ReadTimer.Elapsed += Read;
-            //ReadTimer.Start();
             for (var i = 0; i < 4; i++)
             {
                 WriteCommand(i, Period.Milliseconds, 10);
             }
+
             while (true)
             {
                 var command = ReadCommand().Split(' ');
@@ -77,25 +70,25 @@ namespace TortoisePlatform
                 if (id % 2 == 0)
                     currentTics *= -1;
 
-                Tics[id] += currentTics;
+                Wheels[id].CurrentTics += currentTics;
                 if (command[0].CompareTo("DR") == 0)
                 {
-                    //Console.WriteLine("id: {0}, Time: {1}, tics: {2}", id, command[2], Tics[id]);
-                    var t = Tics[id];
-                    Task.Factory.StartNew(() => DoMath(id, t));
+                    Console.WriteLine("id: {0}, tics: {1}", id, Wheels[id].ExpectedTics - Wheels[id].CurrentTics);
+                    Wheels[id].ExpectedTics += Wheels[id].TicsPerPeriod;
+                    Task.Factory.StartNew(() => DoMath(id, Wheels[id].CurrentTics, Wheels[id].ExpectedTics));
                     //Tics[id] = 0;
-                    ExpectedTics += TicsPerPeriod / 4;
+                    
                 }
             }
 			Console.ReadLine();
 			Com.Close();
 		}
 
-        private static void DoMath(int id, int actualTics)
+        private static void DoMath(int id, int actualTics, int expectedTics)
         {
-            var speed = Regulators[id].Compute(0, ExpectedTics - actualTics, Period);
+            var speed = Wheels[id].Regulator.Compute(0, expectedTics - actualTics, Period);
 
-            Console.WriteLine("{0}: {1}", id, ExpectedTics - actualTics);
+            // Console.WriteLine("{0}: {1}", id, expectedTics - actualTics);
 
             //todo это надо менять
             if (id % 2 == 0)
@@ -103,18 +96,5 @@ namespace TortoisePlatform
 
             WriteCommand(id, Period.Milliseconds, (int)speed);
         }
-
-        //public static void Send(object sender, ElapsedEventArgs elapsedEventArgs)
-        //{
-        //    WriteCommand(0, 1000, 100);
-        //}
-
-        //public static void Read(object sender, ElapsedEventArgs elapsedEventArgs)
-        //{
-        //    if(Com.BytesToRead > 20)
-        //        Console.WriteLine(Com.ReadLine());
-        //    //Console.ReadKey();
-        //    //Console.WriteLine("Read");
-        //}
 	}
 }
