@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Drawing;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Timers;
+using System.Windows.Forms;
 using PidLibrary;
 using Timer = System.Timers.Timer;
 
-namespace TortoisePlatform
+namespace VisualPidTest
 {
 	class Program
 	{
-		private static int WindowSize = 500;
+		private const int WindowSize = 500;
 
-		private static int MaxInput = 100;
-		private static int MinInput = 0;
+		private const int MaxInput = 100;
+		private const int MinInput = 0;
 
-		private static int MaxOutput = 255;
-		private static int MinOutput = -255;
-		
+		private const int MaxOutput = 255;
+		private const int MinOutput = -255;
+
 		private static TrackBar InVal;
 		private static TrackBar ExpectedVal;
 		private static TrackBar OutVal;
@@ -43,24 +42,12 @@ namespace TortoisePlatform
 
 		static void Main(string[] args)
 		{
-			InVal = new TrackBar();
-			InVal.Maximum = MaxInput;
-			InVal.Minimum = MinInput;
-			InVal.Width = WindowSize;
-			InVal.Location = new Point(0, 0);
+			InVal = new TrackBar {Maximum = MaxInput, Minimum = MinInput, Width = WindowSize, Location = new Point(0, 0)};
 
-			OutVal = new TrackBar();
-			OutVal.Maximum = MaxOutput;
-			OutVal.Minimum = MinOutput;
-			OutVal.Width = WindowSize;
-			OutVal.Location = new Point(0, 60);
-			
-			ExpectedVal = new TrackBar();
-			ExpectedVal.Maximum = MaxInput;
-			ExpectedVal.Minimum = MinInput;
-			ExpectedVal.Width = WindowSize;
-			ExpectedVal.Location = new Point(0, 120);
-			
+			OutVal = new TrackBar {Maximum = MaxOutput, Minimum = MinOutput, Width = WindowSize, Location = new Point(0, 60)};
+
+			ExpectedVal = new TrackBar {Maximum = MaxInput, Minimum = MinInput, Width = WindowSize, Location = new Point(0, 120)};
+
 			Regulator = new PIDRegulator(1.0, 1.0, 1, MaxInput, MinInput, MaxOutput, MinOutput);
 			
 
